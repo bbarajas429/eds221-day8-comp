@@ -1,0 +1,113 @@
+---
+title: "Day 8 - Compuatational Sessions"
+format: html
+editor: visual
+execute: 
+  warning: false
+---
+
+## Getting Started
+
+### Load Libraries
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+
+library(patchwork)
+library(ggrepel)
+library(gghighlight)
+library(paletteer)
+```
+
+### Read in data
+
+```{r}
+lizards <- read_csv(here("data_tidy", "lizards.csv"))
+```
+
+### Warm-Up
+
+do some data wrangling to create a new subset where you:
+
+1.  limit data to only contain western whip tails, Colorado checkered, and eastern fence lizards
+
+2.  add a new column with total length converted to cm
+
+3.  group by species and site
+
+4.  return a summary table with mean total length, and sd of total length by species and site
+
+    ```{r}
+    # create subset and filter by desired common names
+    length_table <- lizards %>%
+      filter(common_name %in% c("western whiptail", "colorado checkered", "eastern fence")) %>% 
+      mutate(total_length_cm = total_length / 10) %>% 
+      group_by(common_name, site) %>% 
+      summarize(mean_length_cm = mean(total_length_cm, na.rm = TRUE),
+                sd_length_cm = sd(total_length_cm, na.rm = TRUE))
+      
+    ```
+
+## Creating Plots
+
+### Faceting to split groups (facet_wrap)
+
+length vs weight - all species
+
+```{r}
+ggplot(data = lizards, mapping = aes(x = total_length, 
+                                     y = weight)) +
+  geom_point(aes(color = common_name, alpha = 0.5))
+```
+
+length vs weight - **facet** to split up group
+
+```{r}
+ggplot(data = lizards, mapping = aes(x = total_length, 
+                                     y = weight)) +
+  geom_point(aes(color = common_name)) +
+  facet_wrap(~ common_name)
+
+# can add scales = "free" within facet wrap so that all charts have different x and y scales, but not great for 
+```
+
+### Factor reorder (fct_reorder)
+
+use dplyr::**count** to find the total number of lizards by common name in the lizards data set
+
+```{r}
+# count combines group_by, summarize, and count
+lizard_counts <- lizards %>% 
+  dplyr::count(common_name)
+```
+
+Create a bar chart using the count summary from above, **fct_reorder**
+
+```{r}
+# flip x and y axis to improve readability, since names are long
+#fct_reorder is used to order to organize graph based on values of n
+ggplot(lizard_counts, aes(y = fct_reorder(common_name, n),
+                          x = n)) +
+  geom_col() +
+  labs(x = "lizard count",
+       y = "common name of lizard"
+  )
+```
+
+### Changing Scales
+
+```{r}
+ggplot(data = lizards, mapping = aes(x = total_length, 
+                                     y = weight)) +
+  geom_point() +
+  # setting y-axis to run from 0 to 100 
+  scale_y_continuous(limits =c(0,100),
+                     # specify which values will show on the y-axis
+                     breaks = seq(from = 0, to = 100, by = 20),
+                     # remove gaps between end of data and top of graph using expand
+                     expand = c(0,0)) +
+  scale_color_gradient(colors = c("lightpink", "orchid", "purple"))
+
+```
